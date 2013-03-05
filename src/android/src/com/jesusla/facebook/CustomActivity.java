@@ -10,84 +10,95 @@ import junit.framework.Assert;
 import com.jesusla.ane.Extension;
 
 public class CustomActivity extends Activity {
-
+  static public CustomActivity staticReference;
   private UiLifecycleHelper uiHelper;
-
+  
+  public CustomActivity() {
+  	// the fb dialog calls have to execute in this context; leaving the activity running and passing this reference back allows it
+	  staticReference = this;
+    new RemapResourceIds(this);
+  }
+  
   @Override
   public void onCreate(Bundle savedInstanceState) {
     Extension.debug("CustomActivity:onCreate");
     super.onCreate(savedInstanceState);
 
-	Session.StatusCallback statusCallback = new Session.StatusCallback() {
+	  Session.StatusCallback statusCallback = new Session.StatusCallback() {
       @Override
-	  public void call(Session session, SessionState state, Exception exception) {
-	    Extension.debug("CustomActivity:onSessionStateChange(%s) [e:%s]", state, exception);
-		// forward this back to the caller for asynch dispatch
-		FacebookLib.staticReference.sessionStatusCallback.call(session,state,exception);
-	  	if (state == SessionState.CLOSED_LOGIN_FAILED) {
-	      FacebookLib.staticReference.customActivity.finish();
+	    public void call(Session session, SessionState state, Exception exception) {
+	      Extension.debug("CustomActivity:onSessionStateChange(%s) [e:%s]", state, exception);
+		    // forward this back to the caller for asynch dispatch
+		    FacebookLib.staticReference.sessionStatusCallback.call(session,state,exception);
+	  	  if (state == SessionState.CLOSED_LOGIN_FAILED) {
+          Extension.debug("CustomActivity:onCreateCustomActivity.staticReference.finish()");
+	        CustomActivity.staticReference.finish();
+	      }
+	      if ((state == SessionState.OPENED)||(state == SessionState.OPENED_TOKEN_UPDATED)) {
+	      }
 	    }
-	    if ((state == SessionState.OPENED)||(state == SessionState.OPENED_TOKEN_UPDATED)) {
-	    }
-	  }
-	};
+	  };
 	
-	// the fb dialog calls have to execute in this context; leaving the activity running and passing this reference back allows it
-	FacebookLib.staticReference.customActivity = this;
-	
-	// the bulk of the fb boilerplate is now provided
-	uiHelper = new UiLifecycleHelper(this, statusCallback);
+	  // the bulk of the fb boilerplate is now provided
+	  uiHelper = new UiLifecycleHelper(this, statusCallback);
     uiHelper.onCreate(savedInstanceState);
 		
-	Session session = null;
-	if (FacebookLib.isSessionValid() == false) {
-	  // if this player has an old access token, try to migrate it forward
-	  AccessToken oldAccessToken = FacebookLib.staticReference.oldAccessToken;
-      if (oldAccessToken != null) {
-        session = Session.openActiveSessionWithAccessToken(this, oldAccessToken, null);
-        Assert.assertEquals(session, Session.getActiveSession());
-      }
-	}
+	  Session session = Session.getActiveSession();
+	  if (FacebookLib.isSessionValid() == false) {
+	    // if this player has an old access token, try to migrate it forward
+	    AccessToken oldAccessToken = FacebookLib.staticReference.oldAccessToken;
+        if (oldAccessToken != null) {
+          session = Session.openActiveSessionWithAccessToken(this, oldAccessToken, null);
+          Assert.assertEquals(session, Session.getActiveSession());
+        }
+	    }
 	
-	boolean allowLoginUI = getIntent().getBooleanExtra("allowLoginUI", false);
-	// if no active open session, create one with the ui-enabled helper
+	  boolean allowLoginUI = getIntent().getBooleanExtra("allowLoginUI", false);
+	  // if no active open session, create one with the ui-enabled helper
     if (FacebookLib.isSessionValid() == false) {
-	  session = Session.openActiveSession(this, allowLoginUI, null);
+	    session = Session.openActiveSession(this, allowLoginUI, null);
     } 
-	// if login didn't get at least a session, close this activity
-	if (session == null) {
-	  finish();
-	}
+
+	  // if login didn't get at least a session, close this activity
+	  if (session == null) {
+      Extension.debug("CustomActivity:onCreate called finish()");
+	    finish();
+	  }
   }
 
   @Override
   public void onResume() {
+    Extension.debug("CustomActivity:onResume");
     super.onResume();
     uiHelper.onResume();
   }
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Extension.debug("CustomActivity:onActivityResult %d, %d",requestCode, resultCode);
     super.onActivityResult(requestCode, resultCode, data);
     uiHelper.onActivityResult(requestCode, resultCode, data);
   }
 
   @Override
   public void onPause() {
+    Extension.debug("CustomActivity:onPause");
     super.onPause();
     uiHelper.onPause();
   }
 
   @Override
   public void onDestroy() {
+    Extension.debug("CustomActivity:onDestroy");
     super.onDestroy();
     uiHelper.onDestroy();
 	uiHelper = null;
-	FacebookLib.staticReference.customActivity = null;
+	staticReference = null;
   }
 
   @Override
   public void onSaveInstanceState(Bundle outState) {
+    Extension.debug("CustomActivity:onSaveInstanceState");
     super.onSaveInstanceState(outState);
     uiHelper.onSaveInstanceState(outState);
   }

@@ -19,7 +19,7 @@ import com.facebook.widget.*;
 import com.jesusla.ane.Context;
 import com.jesusla.ane.Extension;
 
-import com.facebook.android.R;
+
 import java.lang.reflect.Field;
 
 public class FacebookLib extends Context {
@@ -27,7 +27,6 @@ public class FacebookLib extends Context {
   public String applicationId;
   public AccessToken oldAccessToken;
   public Session.StatusCallback sessionStatusCallback;
-  public Activity customActivity;
   
   public FacebookLib() {
     FacebookLib.staticReference = this;
@@ -41,83 +40,16 @@ public class FacebookLib extends Context {
     registerFunction("graph");
   }
 
-  // reference: http://techiepulkit.blogspot.in/2013/01/air-android-native-extensions-speeding.html
-  public int getResourceId(String resourceString) {
-    String packageName = getActivity().getPackageName()+".R$";
-	String[] arr = new String[2];
-	arr = resourceString.split("\\.");
-	try {
-	  Class someObject = Class.forName(packageName+arr[0]);
-	  Field someField = someObject.getField(arr[1]);
-	  return someField.getInt(new Integer(0));
-	}
-	catch (Exception e) {
-	  return 0;
-	}
-  }
-  
-  private void patchFacebookResourceIdsAtRuntime() {
-	R.id.com_facebook_login_activity_progress_bar = getResourceId("id.com_facebook_login_activity_progress_bar"); 
-    R.id.com_facebook_picker_activity_circle = getResourceId("id.com_facebook_picker_activity_circle"); 
-    R.id.com_facebook_picker_checkbox = getResourceId("id.com_facebook_picker_checkbox"); 
-    R.id.com_facebook_picker_checkbox_stub = getResourceId("id.com_facebook_picker_checkbox_stub"); 
-    R.id.com_facebook_picker_divider = getResourceId("id.com_facebook_picker_divider"); 
-    R.id.com_facebook_picker_done_button = getResourceId("id.com_facebook_picker_done_button"); 
-    R.id.com_facebook_picker_image = getResourceId("id.com_facebook_picker_image"); 
-    R.id.com_facebook_picker_list_section_header = getResourceId("id.com_facebook_picker_list_section_header"); 
-    R.id.com_facebook_picker_list_view = getResourceId("id.com_facebook_picker_list_view"); 
-    R.id.com_facebook_picker_profile_pic_stub = getResourceId("id.com_facebook_picker_profile_pic_stub"); 
-    R.id.com_facebook_picker_row_activity_circle = getResourceId("id.com_facebook_picker_row_activity_circle"); 
-    R.id.com_facebook_picker_title = getResourceId("id.com_facebook_picker_title"); 
-    R.id.com_facebook_picker_title_bar = getResourceId("id.com_facebook_picker_title_bar"); 
-    R.id.com_facebook_picker_title_bar_stub = getResourceId("id.com_facebook_picker_title_bar_stub"); 
-    R.id.com_facebook_picker_top_bar = getResourceId("id.com_facebook_picker_top_bar"); 
-    R.id.com_facebook_placepickerfragment_search_box_stub = getResourceId("id.com_facebook_placepickerfragment_search_box_stub"); 
-    R.id.com_facebook_usersettingsfragment_login_button = getResourceId("id.com_facebook_usersettingsfragment_login_button"); 
-    R.id.com_facebook_usersettingsfragment_logo_image = getResourceId("id.com_facebook_usersettingsfragment_logo_image"); 
-    R.id.com_facebook_usersettingsfragment_profile_name = getResourceId("id.com_facebook_usersettingsfragment_profile_name"); 
-    R.id.large = getResourceId("id.large"); 
-    R.id.normal = getResourceId("id.normal"); 
-    R.id.picker_subtitle = getResourceId("id.picker_subtitle"); 
-    R.id.search_box = getResourceId("id.search_box"); 
-    R.id.small = getResourceId("id.small"); 
-	R.string.com_facebook_dialogloginactivity_ok_button = getResourceId("string.com_facebook_dialogloginactivity_ok_button");
-    R.string.com_facebook_loginview_log_out_button = getResourceId("string.com_facebook_loginview_log_out_button");
-    R.string.com_facebook_loginview_log_in_button = getResourceId("string.com_facebook_loginview_log_in_button");
-    R.string.com_facebook_loginview_logged_in_as = getResourceId("string.com_facebook_loginview_logged_in_as");
-    R.string.com_facebook_loginview_logged_in_using_facebook = getResourceId("string.com_facebook_loginview_logged_in_using_facebook");
-    R.string.com_facebook_loginview_log_out_action = getResourceId("string.com_facebook_loginview_log_out_action");
-    R.string.com_facebook_loginview_cancel_action = getResourceId("string.com_facebook_loginview_cancel_action");
-    R.string.com_facebook_logo_content_description = getResourceId("string.com_facebook_logo_content_description");
-    R.string.com_facebook_usersettingsfragment_log_in_button = getResourceId("string.com_facebook_usersettingsfragment_log_in_button");
-    R.string.com_facebook_usersettingsfragment_logged_in = getResourceId("string.com_facebook_usersettingsfragment_logged_in");
-    R.string.com_facebook_usersettingsfragment_not_logged_in = getResourceId("string.com_facebook_usersettingsfragment_not_logged_in");
-    R.string.com_facebook_placepicker_subtitle_format = getResourceId("string.com_facebook_placepicker_subtitle_format");
-    R.string.com_facebook_placepicker_subtitle_catetory_only_format = getResourceId("string.com_facebook_placepicker_subtitle_catetory_only_format");
-    R.string.com_facebook_placepicker_subtitle_were_here_only_format = getResourceId("string.com_facebook_placepicker_subtitle_were_here_only_format");
-    R.string.com_facebook_picker_done_button_text = getResourceId("string.com_facebook_picker_done_button_text");
-    R.string.com_facebook_choose_friends = getResourceId("string.com_facebook_choose_friends");
-    R.string.com_facebook_nearby = getResourceId("string.com_facebook_nearby");
-    R.string.com_facebook_loading = getResourceId("string.com_facebook_loading");
-    R.string.com_facebook_internet_permission_error_title = getResourceId("string.com_facebook_internet_permission_error_title");
-    R.string.com_facebook_internet_permission_error_message = getResourceId("string.com_facebook_internet_permission_error_message");
-    R.string.com_facebook_requesterror_web_login = getResourceId("string.com_facebook_requesterror_web_login");
-    R.string.com_facebook_requesterror_relogin = getResourceId("string.com_facebook_requesterror_relogin");
-    R.string.com_facebook_requesterror_password_changed = getResourceId("string.com_facebook_requesterror_password_changed");
-    R.string.com_facebook_requesterror_reconnect = getResourceId("string.com_facebook_requesterror_reconnect");
-    R.string.com_facebook_requesterror_permissions = getResourceId("string.com_facebook_requesterror_permissions");
-
-  }
-  
   @Override
   protected void initContext() {
     Extension.debug("FacebookLib::initContext");
+    new RemapResourceIds(getActivity());
 	
 	sessionStatusCallback = new Session.StatusCallback() {
       @Override
 	  public void call(Session session, SessionState state, Exception exception) {
 	    // dispatch the login response for user initiated sessions but not my autosession
-		if (customActivity.getIntent().getBooleanExtra("allowLoginUI", false)) {
+		if (CustomActivity.staticReference.getIntent().getBooleanExtra("allowLoginUI", false)) {
 	      if (state == SessionState.CLOSED_LOGIN_FAILED) {
 	        dispatchStatusEventAsync("LOGIN_FAILED", "SESSION");
 	      }
@@ -128,8 +60,7 @@ public class FacebookLib extends Context {
 	  }
     };
 
-	// the sdk ids get remapped when ADT process Android ANEs
-	patchFacebookResourceIdsAtRuntime();
+	
 	
     // use our fbAppID instead of com.facebook.sdk.ApplicationId
     applicationId = getProperty("FacebookAppID");
@@ -154,7 +85,9 @@ public class FacebookLib extends Context {
 	
 	// Previously, the sessionValid flag was used and extended to say: we know we've got credentials, just reuse them
 	// To emulate and improve that behavior, I attempt a silent login at launch, which takes the place of extending credentials from before
-	startLoginActivity(false);
+	if ((isSessionValid() == false) || (CustomActivity.staticReference == null)) {
+	  startLoginActivity(false);
+	}
   }
 
   public String getApplicationId() {
@@ -176,13 +109,13 @@ public class FacebookLib extends Context {
 	return null;
   }
   
-  public void login(String[] permissions) {
+  public void login() {
 	Extension.debug("FacebookLib::login");
 	// Extension.debug("FacebookLib::isSessionValid = " + isSessionValid());
 	// Extension.debug("FacebookLib::customActivity = " + customActivity);
 	
 	// don't bother with the login unless necessary
-	if ((isSessionValid() == false) || (customActivity == null)) {
+	if ((isSessionValid() == false) || (CustomActivity.staticReference == null)) {
 	  startLoginActivity(true);
 	}
 	else {
@@ -191,11 +124,6 @@ public class FacebookLib extends Context {
   }
 
   private void startLoginActivity(boolean allowLoginUI) {
-    // we don't want multiple login activities spinning up
-	if (customActivity != null) {
-	  customActivity.finish();
-	  Extension.debug("FacebookLib::Sanity Check! startLoginActivity called with not-null customActivity");
-	}
 	Intent intent = new Intent(getActivity(), CustomActivity.class);
 	intent.putExtra("allowLoginUI", allowLoginUI);
     getActivity().startActivity(intent);
@@ -205,8 +133,8 @@ public class FacebookLib extends Context {
 	if (isSessionValid()) {
 	  Session.getActiveSession().closeAndClearTokenInformation();
 	}
-	if (customActivity != null) {
-	  customActivity.finish();
+	if (CustomActivity.staticReference != null) {
+	  CustomActivity.staticReference.finish();
 	}
     dispatchStatusEventAsync("LOGOUT", "SESSION");
   }
@@ -220,9 +148,11 @@ public class FacebookLib extends Context {
   }
 
   public void showDialog(String action, Bundle params) {
-      Session session = Session.getActiveSession();
-	  Assert.assertEquals(session.isOpened(), true);
-      WebDialog.OnCompleteListener onComplete = new WebDialog.OnCompleteListener() {
+    Session session = Session.getActiveSession();
+	  Assert.assertTrue(session.isOpened());
+	  Assert.assertNotNull(CustomActivity.staticReference);
+	  
+    WebDialog.OnCompleteListener onComplete = new WebDialog.OnCompleteListener() {
       @Override
       public void onComplete(Bundle values, FacebookException error) {
         if (error == null) {
@@ -243,14 +173,14 @@ public class FacebookLib extends Context {
     String method = params.getString("method");
     if (method.equalsIgnoreCase("feed")) {
       WebDialog feedDialog =
-        new WebDialog.FeedDialogBuilder(customActivity, Session.getActiveSession(), params)
+        new WebDialog.FeedDialogBuilder(CustomActivity.staticReference, Session.getActiveSession(), params)
       .setOnCompleteListener(onComplete)
       .build();
       feedDialog.show();
     }
     else if (method.equalsIgnoreCase("apprequests")) {
       WebDialog requestDialog =
-        new WebDialog.RequestsDialogBuilder(customActivity,Session.getActiveSession(), params)
+        new WebDialog.RequestsDialogBuilder(CustomActivity.staticReference, Session.getActiveSession(), params)
       .setOnCompleteListener(onComplete)
       .build();
       requestDialog.show();
@@ -260,7 +190,7 @@ public class FacebookLib extends Context {
   public String graph(String graphPath, Bundle params, String httpMethodString) {
     final String uuid = UUID.randomUUID().toString();
     Session session = Session.getActiveSession();
-	Assert.assertEquals(session.isOpened(), true);
+	Assert.assertTrue(session.isOpened());
 
     Request.Callback callback = new Request.Callback() {
       @Override
