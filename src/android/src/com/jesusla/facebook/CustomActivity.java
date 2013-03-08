@@ -15,51 +15,31 @@ public class CustomActivity extends Activity {
   private static int activityCount = 0;
   private int activityId = 0;
 
-  // loginActivity is persistent, except the OS kills it off whenever it feels like
-  // - turns out that when instrumented, this is happening often
-  private static CustomActivity loginActivity;
-
-  // dialogActivity closes and finishs every time it runs - should not return on resume 
-  // - unless loginActivity was previous nuked by OS, then it should migrate
-  private static CustomActivity dialogActivity;
-
-  private UiLifecycleHelper uiHelper;
-  private Session.StatusCallback statusCallback;
-  private WebDialog.OnCompleteListener dialogCallback;
+  // handle to close after task complete
+  private static CustomActivity customActivity;
   
-  public CustomActivity() {
-    activityId = ++activityCount;
-    Extension.debug("CustomActivity(): %d", activityId);
-  }
-
-  public static CustomActivity getLoginActivity() {
-    return loginActivity;
-  }
-
-  @Override
-  public void onCreate(Bundle savedInstanceState) {
-    Extension.debug("CustomActivity %d:onCreate", activityId);
-    new RemapResourceIds(this);
-    super.onCreate(savedInstanceState);
-
-    statusCallback = new Session.StatusCallback() {
-      @Override
-      public void call(Session session, SessionState state, Exception exception) {
-        Extension.debug("CustomActivity:onSessionStateChange(%s) [e:%s]", state, exception);
-        // forward this back to the caller for asynch dispatch
-        FacebookLib.sessionStatusCallback.call(session,state,exception);
-        if (state == SessionState.CLOSED_LOGIN_FAILED) {
-          if (loginActivity != null) {
-            //Extension.debug("loginActivity.finish() called");
-            loginActivity.finish();  
-          }
-        }
-        if ((state == SessionState.OPENED)||(state == SessionState.OPENED_TOKEN_UPDATED)) {
+  private static Session.StatusCallback statusCallback = new Session.StatusCallback() {
+    @Override
+    public void call(Session session, SessionState state, Exception exception) {
+      Extension.debug("CustomActivity:onSessionStateChange(%s) [e:%s]", state, exception);
+      // forward this back to the caller for asynch dispatch
+      FacebookLib.sessionStatusCallback.call(session,state,exception);
+      if (state == SessionState.CLOSED_LOGIN_FAILED) {
+        if (customActivity != null) {
+          //Extension.debug("customActivity.finish() called");
+          customActivity.finish();  
         }
       }
-    };
-    
-    dialogCallback = new WebDialog.OnCompleteListener() {
+      if ((state == SessionState.OPENED)||(state == SessionState.OPENED_TOKEN_UPDATED)) {
+        if (customActivity != null) {
+          //Extension.debug("customActivity.finish() called");
+          customActivity.finish();  
+        }
+      }
+    }
+  };
+  
+  private static WebDialog.OnCompleteListener dialogCallback = new WebDialog.OnCompleteListener() {
       @Override
       public void onComplete(Bundle values, FacebookException error) {
         // forward this back to the caller for asynch dispatch
@@ -69,18 +49,26 @@ public class CustomActivity extends Activity {
         //      loginActivity != null ? loginActivity.activityId : -1, 
         //      dialogActivity != null ? dialogActivity.activityId : -1);
         
-        // if these activities ended up the same, keep the activity alive as the loginActivity
-        if (loginActivity != dialogActivity) {
-          //Extension.debug("dialogActivity.finish() called");
-          dialogActivity.finish();  
+        //Extension.debug("dialogActivity.finish() called");
+        if (customActivity != null) {
+          customActivity.finish();    
         }
-        else {
-          // Extension.debug("dialogActivity.finish() NOT called");
-        }
-        // but the dialogActivity is done
-        dialogActivity = null;
       }
     };
+
+  
+  private UiLifecycleHelper uiHelper;
+
+  public CustomActivity() {
+    activityId = ++activityCount;
+    Extension.debug("CustomActivity(): %d", activityId);
+  }
+
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    Extension.debug("CustomActivity %d:onCreate", activityId);
+    new RemapResourceIds(this);
+    super.onCreate(savedInstanceState);
 
 	  // the bulk of the fb boilerplate is now provided
 	  uiHelper = new UiLifecycleHelper(this, statusCallback);
@@ -93,6 +81,7 @@ public class CustomActivity extends Activity {
       if (oldAccessToken != null) {
         session = Session.openActiveSessionWithAccessToken(this, oldAccessToken, null);
         Assert.assertEquals(session, Session.getActiveSession());
+        FacebookLib.oldAccessToken = null;
       }
 	  }
 	
@@ -110,10 +99,8 @@ public class CustomActivity extends Activity {
         return;
       }
     } 
-    if (loginActivity == null) {
-      loginActivity = this;
-    }
-
+    customActivity = this;
+    
     // handle startActivity vis a vis showDialog
     String method = intent.getStringExtra("method");
     Bundle params = intent.getBundleExtra("params");
@@ -123,20 +110,17 @@ public class CustomActivity extends Activity {
 
     if (("feed").equalsIgnoreCase(method)) {
       Assert.assertTrue(session.isOpened());
-      Assert.assertNull(dialogActivity);
-      dialogActivity = this;
       WebDialog feedDialog =
-        new WebDialog.FeedDialogBuilder(dialogActivity, Session.getActiveSession(), params)
+        new WebDialog.FeedDialogBuilder(this, Session.getActiveSession(), params)
       .setOnCompleteListener(dialogCallback)
       .build();
       feedDialog.show();
     }
     else if (("apprequests").equalsIgnoreCase(method)) {
       Assert.assertTrue(session.isOpened());
-      Assert.assertNull(dialogActivity);
-      dialogActivity = this;
+      // Assert.assertNull(dialogActivity);
       WebDialog requestDialog =
-        new WebDialog.RequestsDialogBuilder(dialogActivity, Session.getActiveSession(), params)
+        new WebDialog.RequestsDialogBuilder(this, Session.getActiveSession(), params)
       .setOnCompleteListener(dialogCallback)
       .build();
       requestDialog.show();
@@ -167,20 +151,9 @@ public class CustomActivity extends Activity {
   @Override
   public void onDestroy() {
     Extension.debug("CustomActivity %d:onDestroy", activityId);
-    // Extension.debug("onDestroy loginActivity %d dialogActivity %d", 
-    //      loginActivity != null ? loginActivity.activityId : -1, 
-    //      dialogActivity != null ? dialogActivity.activityId : -1);
-
     super.onDestroy();
     uiHelper.onDestroy();
-    if (this == loginActivity) {
-      //Extension.debug("loginActivity nulled");
-      loginActivity = null;
-    }
-    if (this == dialogActivity) {
-      //Extension.debug("dialogActivity nulled");
-      dialogActivity = null;
-    }
+    customActivity = null;
   }
 
   @Override

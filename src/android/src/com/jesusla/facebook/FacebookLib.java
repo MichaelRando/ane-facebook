@@ -19,11 +19,19 @@ import com.facebook.widget.*;
 import com.jesusla.ane.Context;
 import com.jesusla.ane.Extension;
 
+// legacy includes {showDialog}
+import com.facebook.android.Facebook;
+import com.facebook.android.Facebook.DialogListener;
+import com.facebook.android.FacebookError;
+import com.facebook.android.DialogError;
+
 public class FacebookLib extends Context {
   static public String applicationId;
   static public AccessToken oldAccessToken;
   static public Session.StatusCallback sessionStatusCallback;
   static public WebDialog.OnCompleteListener dialogCompleteCallback;
+  private Boolean m_allowLoginUI = false;
+  private Facebook facebook = null;
   
   public FacebookLib() {
     Extension.debug("FacebookLib::FacebookLib");
@@ -46,7 +54,7 @@ public class FacebookLib extends Context {
       @Override
 	    public void call(Session session, SessionState state, Exception exception) {
 	      // dispatch the login response for user initiated sessions but not my autosession
-		    if (CustomActivity.getLoginActivity().getIntent().getBooleanExtra("allowLoginUI", false)) {
+		    if (m_allowLoginUI) {
 	        if (state == SessionState.CLOSED_LOGIN_FAILED) {
 	          dispatchStatusEventAsync("LOGIN_FAILED", "SESSION");
 	        }
@@ -67,8 +75,15 @@ public class FacebookLib extends Context {
           // User clicked the "x" button
           String url = encodeBundle(values);
           asyncFlashCall(null, null, "dialogDidNotComplete", url);
+        } else if (error instanceof FacebookDialogException) {
+          FacebookDialogException de = (FacebookDialogException)error;
+          Extension.debug("FacebookDialogException (%s, %d, %s) ", de.getMessage(), de.getErrorCode(), de.getFailingUrl());      
+          String url = encodeBundle(values);
+          Extension.debug("FacebookDialogException values " + url);
+          asyncFlashCall(null, null, "dialogDidNotComplete", url);
         } else {
           // Generic, ex: network error
+          Extension.debug("FacebookException error = "+ error.toString());      
           String url = encodeBundle(values);
           asyncFlashCall(null, null, "dialogDidFailWithError", url);
         }
@@ -98,7 +113,7 @@ public class FacebookLib extends Context {
 	
 	  // Previously, the sessionValid flag was used and extended to say: we know we've got credentials, just reuse them
 	  // To emulate and improve that behavior, I attempt a silent login at launch, which takes the place of extending credentials from before
-	  if ((isSessionValid() == false) || (CustomActivity.getLoginActivity() == null)) {
+	  if (isSessionValid() == false) {
 	    startLoginActivity(false);
 	  }
   }
@@ -125,10 +140,9 @@ public class FacebookLib extends Context {
   public void login() {
 	  Extension.debug("FacebookLib::login");
 	  // Extension.debug("FacebookLib::isSessionValid = " + isSessionValid());
-	  // Extension.debug("FacebookLib::customActivity = " + customActivity);
 	
 	  // don't bother with the login unless necessary
-	  if ((isSessionValid() == false) || (CustomActivity.getLoginActivity() == null)) {
+	  if (isSessionValid() == false) {
 	    startLoginActivity(true);
 	  }
 	  else {
@@ -137,17 +151,15 @@ public class FacebookLib extends Context {
   }
 
   private void startLoginActivity(boolean allowLoginUI) {
+    m_allowLoginUI = allowLoginUI;
 	  Intent intent = new Intent(getActivity(), CustomActivity.class);
-	  intent.putExtra("allowLoginUI", allowLoginUI);
+	  intent.putExtra("allowLoginUI", m_allowLoginUI);
     getActivity().startActivity(intent);
   }
 
   public void logout() {
 	  if (isSessionValid()) {
 	    Session.getActiveSession().closeAndClearTokenInformation();
-	  }
-	  if (CustomActivity.getLoginActivity() != null) {
-	    CustomActivity.getLoginActivity().finish();
 	  }
     dispatchStatusEventAsync("LOGOUT", "SESSION");
   }
@@ -159,7 +171,16 @@ public class FacebookLib extends Context {
     }
     return false;
   }
-
+  private final DialogListener dialogListener = new DialogListener() {
+    @Override public void onFacebookError(FacebookError e) { asyncFlashCall(null, null, "dialogDidFailWithError", ""); }
+    @Override public void onError(DialogError e) { asyncFlashCall(null, null, "dialogDidFailWithError", ""); }
+    @Override public void onCancel() { asyncFlashCall(null, null, "dialogDidNotComplete", ""); }
+    @Override public void onComplete(Bundle values) {
+      String url = encodeBundle(values);
+      asyncFlashCall(null, null, "dialogDidComplete", url);
+    }
+  };
+  
   public void showDialog(String action, Bundle params) {
     String method = params.getString("method");
     Intent intent = new Intent(getActivity(), CustomActivity.class);
@@ -168,6 +189,17 @@ public class FacebookLib extends Context {
 
     getActivity().startActivity(intent);
   }
+  /*
+  public void showDialog(String action, Bundle params) {
+    if (facebook == null) {
+      facebook = new Facebook(applicationId);
+      Session session = Session.getActiveSession();
+      Assert.assertTrue(session.isOpened());
+      facebook.setAccessToken(session.getAccessToken());
+      facebook.setAccessExpires(session.getExpirationDate().getTime());
+    }
+    facebook.dialog(getActivity(), action, params, dialogListener);
+  }*/
 
   public String graph(String graphPath, Bundle params, String httpMethodString) {
     final String uuid = UUID.randomUUID().toString();
@@ -178,17 +210,14 @@ public class FacebookLib extends Context {
       @Override
       public void onCompleted(Response response) {
 		    if (response.getGraphObject() != null) {
-		      try {
-            JSONObject data = new JSONObject(response.getGraphObject().asMap());
-            asyncFlashCall(null, null, "requestDidLoad", uuid, data);
-          } 
-		      catch (NullPointerException e) {
-            Extension.debug("Extension.fail Parsing '%s'", response.getGraphObject().asMap());
-		        asyncFlashCall(null, null, "requestDidFailWithError", uuid, e);
-          }
+          JSONObject data = response.getGraphObject().getInnerJSONObject();
+          asyncFlashCall(null, null, "requestDidLoad", uuid, data);
 		    }
 		    else {
-		      asyncFlashCall(null, null, "requestDidFailWithError", uuid, response.getError());
+		      asyncFlashCall(null, null, "requestDidFailWithError", uuid, response.getError().getRequestResultBody());
+          // I'm worried when requests fail but we thought the session is valid and open
+          // so I'm clearing the active session, you will have to login fresh.
+          Session.setActiveSession(null);
 		    }
       }
     };
