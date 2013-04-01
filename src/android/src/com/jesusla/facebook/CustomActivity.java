@@ -71,26 +71,26 @@ public class CustomActivity extends Activity {
     super.onCreate(savedInstanceState);
 
 	  // the bulk of the fb boilerplate is now provided
-	  uiHelper = new UiLifecycleHelper(this, statusCallback);
+	uiHelper = new UiLifecycleHelper(this, statusCallback);
     uiHelper.onCreate(savedInstanceState);
 		
-	  Session session = Session.getActiveSession();
-	  if (FacebookLib.isSessionValid() == false) {
+	Session session = Session.getActiveSession();
+	if (FacebookLib.isSessionValid() == false) {
 	    // if this player has an old access token, try to migrate it forward
-	    AccessToken oldAccessToken = FacebookLib.oldAccessToken;
+	  AccessToken oldAccessToken = FacebookLib.oldAccessToken;
       if (oldAccessToken != null) {
         session = Session.openActiveSessionWithAccessToken(this, oldAccessToken, null);
         Assert.assertEquals(session, Session.getActiveSession());
         FacebookLib.oldAccessToken = null;
-      }
-	  }
+      } 
+	}
 	
-	  Intent intent = getIntent();
+	Intent intent = getIntent();
     boolean allowLoginUI = intent.getBooleanExtra("allowLoginUI", false);
 
 	  // if no active open session, create one with the ui-enabled helper
     if (FacebookLib.isSessionValid() == false) {
-	    session = Session.openActiveSession(this, allowLoginUI, null);
+	  session = Session.openActiveSession(this, allowLoginUI, null);
       
       // if login didn't get at least a session, close this activity
       if (session == null) {
