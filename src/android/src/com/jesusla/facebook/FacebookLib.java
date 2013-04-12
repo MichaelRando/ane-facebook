@@ -38,7 +38,7 @@ public class FacebookLib extends Context {
     registerFunction("graph");
 	
 	sessionStatusCallback = new Session.StatusCallback() {
-      @Override
+    @Override
 	  public void call(Session session, SessionState state, Exception exception) {
 	  // dispatch the login response for user initiated sessions but not my autosession
 	    if (m_allowLoginUI) {
@@ -85,7 +85,7 @@ public class FacebookLib extends Context {
 
     // use our fbAppID instead of com.facebook.sdk.applicationId
     applicationId = getProperty("FacebookAppID");
-	Extension.debug("FacebookAppID = "+ applicationId);
+	  Extension.debug("FacebookAppID = "+ applicationId);
 
     Settings.setShouldAutoPublishInstall(true); 
 	
@@ -108,7 +108,7 @@ public class FacebookLib extends Context {
 	// To emulate and improve that behavior, I attempt a silent login at launch, which takes the place of extending credentials from before
 	if (isSessionValid() == false) {
 	  startLoginActivity(false);
-	}
+	  }
   }
 
   public String getApplicationId() {
@@ -117,8 +117,8 @@ public class FacebookLib extends Context {
 
   public String getAccessToken() {
     if (isSessionValid()) {
-	  return Session.getActiveSession().getAccessToken();
-	}
+	    return Session.getActiveSession().getAccessToken();
+	  }
     return null;
   }
 
@@ -140,7 +140,7 @@ public class FacebookLib extends Context {
 	}
 	else {
 	  dispatchStatusEventAsync("LOGIN", "SESSION");
-	}
+	  }
   }
 
   private void startLoginActivity(boolean allowLoginUI) {
