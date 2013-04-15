@@ -15,6 +15,7 @@ import junit.framework.Assert;
 
 import com.facebook.*;
 import com.facebook.widget.*;
+import com.facebook.internal.Utility;
 
 import com.jesusla.ane.Context;
 import com.jesusla.ane.Extension;
@@ -83,9 +84,10 @@ public class FacebookLib extends Context {
       }
     };
 
-    // use our fbAppID instead of com.facebook.sdk.applicationId
-    applicationId = getProperty("FacebookAppID");
-	  Extension.debug("FacebookAppID = "+ applicationId);
+    // use our FacebookAppID instead of com.facebook.sdk.applicationId
+    // applicationId = getProperty("FacebookAppID");
+	applicationId = Utility.getMetadataApplicationId(getActivity());
+	Extension.debug("FacebookAppID = "+ applicationId);
 
     Settings.setShouldAutoPublishInstall(true); 
 	
