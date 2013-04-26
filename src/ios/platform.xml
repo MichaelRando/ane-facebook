@@ -8,5 +8,6 @@
         <option>-weak_framework AdSupport</option>
         <option>-weak_framework Social</option>
         <option>-lsqlite3.0</option>
+		<option>-force_load /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/arc/libarclite_iphoneos.a</option>
     </linkerOptions>
 </platform>
